@@ -1,4 +1,4 @@
-package netifi_go
+package tags
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewTag(t *testing.T) {
-	tag := NewTag("k1", "val")
+	tag := New("k1", "val")
 	assert.Equal(t, "k1", tag.Key())
 	assert.Equal(t, "val", tag.Value())
 }
@@ -31,8 +31,8 @@ func TestOfAcceptOnlyEvent(t *testing.T)  {
 func TestAnd(t *testing.T)  {
 	tags, _ := Of("k1", "v1", "k2", "v2")
 
-	t1 := NewTag("k3", "v3")
-	t2:= NewTag("k4", "v4")
+	t1 := New("k3", "v3")
+	t2:= New("k4", "v4")
 
 	tags = tags.And(t1, t2)
 

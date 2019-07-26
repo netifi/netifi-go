@@ -1,4 +1,4 @@
-package rsocket
+package reconnecting_rsocket
 
 import (
 	"context"
@@ -17,10 +17,10 @@ type ReconnectingRSocket struct {
 	requestHandler rrpc.RequestHandlingRSocket
 	activeSocket   rsocket.CloseableRSocket
 	uri            func() string
-	factory        func() payload.SetupPayload
+	factory        func() payload.Payload
 }
 
-func NewReconnectingRSocket(uri func() string, requestHandler rrpc.RequestHandlingRSocket, factory func() payload.SetupPayload) rsocket.RSocket {
+func New(uri func() string, requestHandler rrpc.RequestHandlingRSocket, factory func() payload.Payload) rsocket.RSocket {
 	return &ReconnectingRSocket{
 		uri:            uri,
 		requestHandler: requestHandler,
@@ -47,7 +47,7 @@ func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e e
 			Start(context.Background())
 
 		if e != nil {
-			log.Printf("error connecting to uri %s{} - %s\n", r.uri, e)
+			log.Printf("error connecting to uri %s{} - %s\n", r.uri(), e)
 			return
 		}
 

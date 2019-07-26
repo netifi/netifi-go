@@ -1,10 +1,10 @@
-package netifi_go
+package tags
 
 import "github.com/pkg/errors"
 
 type Tag [2]string
 
-func NewTag(k string, v string) *Tag {
+func New(k string, v string) *Tag {
 	return &Tag{k, v}
 }
 
@@ -28,7 +28,7 @@ func Of(keyValues ...string) (Tags, error) {
 	}
 	t := make(Tags, l / 2)
 	for i := 0; i < l; i += 2 {
-		t[i/2] = NewTag(keyValues[i], keyValues[i+1])
+		t[i/2] = New(keyValues[i], keyValues[i+1])
 	}
 	return t, nil
 }

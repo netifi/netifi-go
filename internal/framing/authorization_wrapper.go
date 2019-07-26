@@ -17,7 +17,7 @@ func (a AuthorizationWrapper) InnerFrame() []byte {
 	return a[offset:]
 }
 
-func encodeAuthorizationWrapper(accessKey uint64, innerFrame []byte) (a AuthorizationWrapper, err error) {
+func EncodeAuthorizationWrapper(accessKey uint64, innerFrame []byte) (a AuthorizationWrapper, err error) {
 	w := &bytes.Buffer{}
 	f, err := encodeFrameHeader(FrameTypeAuthorizationWrapper)
 	if err != nil {

@@ -1,4 +1,4 @@
-package rsocket
+package transforming_rsocket
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 )
 
 type PayloadTransformingRSocket struct {
+	rsocket.RSocket
 	Transformer func(msg payload.Payload) (payload.Payload, error)
 	Source      func() rsocket.RSocket
 }

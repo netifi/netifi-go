@@ -1,4 +1,4 @@
-package netifi_go
+package discovery_strategy
 
 type DiscoveryStrategy interface {
 	DiscoverNodes() <-chan []string
@@ -15,7 +15,7 @@ func (s *StaticDiscoveryStrategy) DiscoverNodes() <-chan []string {
 	return n
 }
 
-func NewStaticDiscoveryStrategy(n ...string) *StaticDiscoveryStrategy {
+func New(n ...string) *StaticDiscoveryStrategy {
 	return &StaticDiscoveryStrategy{
 		nodes: n,
 	}

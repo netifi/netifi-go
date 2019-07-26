@@ -3,7 +3,7 @@ package framing
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/netifi/netifi-go"
+	"github.com/netifi/netifi-go/tags"
 )
 
 type Broadcast []byte
@@ -29,7 +29,7 @@ func (g Broadcast) Metadata() []byte {
 	return g[offset : offset+metadataLength]
 }
 
-func (g Broadcast) Tags() (t netifi_go.Tags) {
+func (g Broadcast) Tags() (t tags.Tags) {
 	offset := HeaderOffset()
 
 	groupLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
@@ -38,7 +38,7 @@ func (g Broadcast) Tags() (t netifi_go.Tags) {
 	metadataLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
 	offset += 4 + metadataLength
 
-	t = netifi_go.Tags{}
+	t = tags.Tags{}
 	for {
 		keyLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
 		offset += 4
@@ -52,7 +52,7 @@ func (g Broadcast) Tags() (t netifi_go.Tags) {
 		value := string(g[offset+valueLength])
 		offset += valueLength
 
-		t = t.And(netifi_go.NewTag(key, value))
+		t = t.And(tags.New(key, value))
 
 		if offset >= len(g) {
 			break
@@ -62,7 +62,7 @@ func (g Broadcast) Tags() (t netifi_go.Tags) {
 	return
 }
 
-func EncodeBroadcast(group string, metadata []byte, tags netifi_go.Tags) (g Broadcast, err error) {
+func EncodeBroadcast(group string, metadata []byte, tags tags.Tags) (g Broadcast, err error) {
 	w := &bytes.Buffer{}
 	f, err := encodeFrameHeader(FrameTypeBroadcast)
 	if err != nil {
@@ -98,7 +98,7 @@ func EncodeBroadcast(group string, metadata []byte, tags netifi_go.Tags) (g Broa
 		key := tag.Key()
 		value := tag.Value()
 
-		err := binary.Write(w, binary.BigEndian, uint32(len(key)))
+		err = binary.Write(w, binary.BigEndian, uint32(len(key)))
 		if err != nil {
 			return
 		}

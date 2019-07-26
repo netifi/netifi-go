@@ -3,7 +3,7 @@ package framing
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/netifi/netifi-go"
+	"github.com/netifi/netifi-go/tags"
 )
 
 type Shard []byte
@@ -44,7 +44,7 @@ func (g Shard) ShardKey() []byte {
 	return g[offset : offset+shardKeyLength]
 }
 
-func (g Shard) Tags() (t netifi_go.Tags) {
+func (g Shard) Tags() (t tags.Tags) {
 	offset := HeaderOffset()
 
 	groupLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
@@ -56,7 +56,7 @@ func (g Shard) Tags() (t netifi_go.Tags) {
 	shardKeyLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
 	offset += 4 + shardKeyLength
 
-	t = netifi_go.Tags{}
+	t = tags.Tags{}
 	for {
 		keyLength := int(binary.BigEndian.Uint32(g[offset : offset+4]))
 		offset += 4
@@ -70,7 +70,7 @@ func (g Shard) Tags() (t netifi_go.Tags) {
 		value := string(g[offset+valueLength])
 		offset += valueLength
 
-		t = t.And(netifi_go.NewTag(key, value))
+		t = t.And(tags.New(key, value))
 
 		if offset >= len(g) {
 			break
@@ -80,7 +80,7 @@ func (g Shard) Tags() (t netifi_go.Tags) {
 	return
 }
 
-func EncodeShard(group string, metadata []byte, shardKey []byte, tags netifi_go.Tags) (g Broadcast, err error) {
+func EncodeShard(group string, metadata []byte, shardKey []byte, tags tags.Tags) (g Broadcast, err error) {
 	w := &bytes.Buffer{}
 	f, err := encodeFrameHeader(FrameTypeBroadcast)
 	if err != nil {
@@ -126,7 +126,7 @@ func EncodeShard(group string, metadata []byte, shardKey []byte, tags netifi_go.
 		key := tag.Key()
 		value := tag.Value()
 
-		err := binary.Write(w, binary.BigEndian, uint32(len(key)))
+		err = binary.Write(w, binary.BigEndian, uint32(len(key)))
 		if err != nil {
 			return
 		}

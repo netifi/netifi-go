@@ -1,4 +1,4 @@
-package netifi_go
+package discovery_strategy
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -6,8 +6,8 @@ import (
 )
 
 func TestStaticDiscoveryStrategy(t *testing.T) {
-	strategy := NewStaticDiscoveryStrategy("tcp://localhost:8001", "tcp://localhost:8002")
-	strings := <-strategy.DiscoverNodes()
+	ds := New("tcp://localhost:8001", "tcp://localhost:8002")
+	strings := <-ds.DiscoverNodes()
 
 	s1 := strings[0]
 	s2 := strings[1]

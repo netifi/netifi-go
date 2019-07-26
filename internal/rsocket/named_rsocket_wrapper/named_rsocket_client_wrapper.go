@@ -1,14 +1,14 @@
-package rsocket
+package named_rsocket_wrapper
 
 import (
+	"github.com/netifi/netifi-go/internal/rsocket/transforming_rsocket"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
 	rrpc "github.com/rsocket/rsocket-rpc-go"
 )
 
 type NamedRSocketClientWrapper struct {
-	PayloadTransformingRSocket
-	rrpc.RrpcRSocket
+	transforming_rsocket.PayloadTransformingRSocket
 	name string
 }
 
@@ -29,7 +29,7 @@ func (r *NamedRSocketClientWrapper) Wrap(msg payload.Payload) (p payload.Payload
 	return
 }
 
-func NewNamedRSocketClientWrapper(name string, source rsocket.RSocket) rrpc.RrpcRSocket {
+func New(name string, source rsocket.RSocket) rrpc.RrpcRSocket {
 	wrapper := &NamedRSocketClientWrapper{}
 	wrapper.name = name
 	wrapper.Transformer = wrapper.Wrap

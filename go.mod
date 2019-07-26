@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/golang/protobuf v1.3.2
+	github.com/google/uuid v1.1.1
 	github.com/hoisie/mustache v0.0.0-20120318181656-6dfe7cd5e765
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.8.1
