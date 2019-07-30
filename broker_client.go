@@ -13,6 +13,7 @@ import (
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
 	rrpc "github.com/rsocket/rsocket-rpc-go"
+	"log"
 	"math/rand"
 	"net"
 	"sync"
@@ -224,7 +225,7 @@ func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
 				s.config.uuid,
 				s.config.flags, s.config.tags)
 			if e != nil {
-				panic("error encoding destination setup")
+				log.Panic(e)
 			}
 			return payload.New(nil, d)
 		})
