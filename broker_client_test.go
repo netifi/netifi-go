@@ -70,12 +70,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestNamedSocket(t *testing.T) {
-	client, e := New().
-		RSocketSelector(&testRSocketSelector{}).
-		AccessKey(123).
-		AccessToken([]byte("token")).
-		Group("test").
-		Build()
+	client, e := New().Build()
 
 	if e != nil {
 		fmt.Println(e)
