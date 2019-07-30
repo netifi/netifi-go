@@ -7,30 +7,25 @@ import (
 	rrpc "github.com/rsocket/rsocket-rpc-go"
 )
 
-type NamedRSocketClientWrapper struct {
+type NamedRSocketServiceWrapper struct {
 	transforming_rsocket.PayloadTransformingRSocket
 	name string
 }
 
-func (r *NamedRSocketClientWrapper) Name() string {
+func (r *NamedRSocketServiceWrapper) Name() string {
 	return r.name
 }
 
-func (r *NamedRSocketClientWrapper) wrap(msg payload.Payload) (p payload.Payload, err error) {
+func (r *NamedRSocketServiceWrapper) wrap(msg payload.Payload) (p payload.Payload, err error) {
 	d := msg.Data()
 	m, _ := msg.Metadata()
-	md, err := rrpc.EncodeMetadata(r.Name(), r.Name(), nil, m)
-
-	if err != nil {
-		return
-	}
-
-	p = payload.New(d, md)
+	metadata := rrpc.Metadata(m).Metadata()
+	p = payload.New(d, metadata)
 	return
 }
 
-func NewClientWrapper(name string, source rsocket.RSocket) rrpc.RrpcRSocket {
-	wrapper := &NamedRSocketClientWrapper{}
+func NewServiceWrapper(name string, source rsocket.RSocket) rrpc.RrpcRSocket {
+	wrapper := &NamedRSocketServiceWrapper{}
 	wrapper.name = name
 	wrapper.Transformer = wrapper.wrap
 	wrapper.Source = func() rsocket.RSocket {

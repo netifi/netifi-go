@@ -4,6 +4,10 @@ import "github.com/pkg/errors"
 
 type Tag [2]string
 
+func Empty() Tags {
+	return make(Tags, 0)
+}
+
 func New(k string, v string) *Tag {
 	return &Tag{k, v}
 }
@@ -26,7 +30,7 @@ func Of(keyValues ...string) (Tags, error) {
 	if l%2 == 1 {
 		return nil, errors.New("size must be even, it is a set of key=value pairs")
 	}
-	t := make(Tags, l / 2)
+	t := make(Tags, l/2)
 	for i := 0; i < l; i += 2 {
 		t[i/2] = New(keyValues[i], keyValues[i+1])
 	}

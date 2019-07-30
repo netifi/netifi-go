@@ -79,7 +79,7 @@ func EncodeGroup(group string, metadata []byte, tags tags.Tags) (g Group, err er
 		return
 	}
 
-	err = binary.Write(w, binary.BigEndian, group)
+	_, err = w.WriteString(group)
 	if err != nil {
 		return
 	}
@@ -103,7 +103,7 @@ func EncodeGroup(group string, metadata []byte, tags tags.Tags) (g Group, err er
 			return
 		}
 
-		err = binary.Write(w, binary.BigEndian, key)
+		_, err = w.WriteString(key)
 		if err != nil {
 			return
 		}
@@ -113,7 +113,7 @@ func EncodeGroup(group string, metadata []byte, tags tags.Tags) (g Group, err er
 			return
 		}
 
-		err = binary.Write(w, binary.BigEndian, value)
+		_, err = w.WriteString(value)
 		if err != nil {
 			return
 		}

@@ -2,6 +2,7 @@ package reconnecting_rsocket
 
 import (
 	"context"
+	"github.com/netifi/netifi-go/internal/rsocket/unwrapping_rsocket"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
 	"github.com/rsocket/rsocket-go/rx"
@@ -41,7 +42,7 @@ func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e e
 			SetupPayload(r.factory()).
 			Acceptor(
 				func(socket rsocket.RSocket) rsocket.RSocket {
-					return r.requestHandler
+					return unwrapping_rsocket.New(r.requestHandler)
 				}).
 			Transport(r.uri()).
 			Start(context.Background())

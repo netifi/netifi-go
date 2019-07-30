@@ -29,6 +29,7 @@ type Builder interface {
 	Destination(destination string) Builder
 	Public(p bool) Builder
 	IP(ip net.IP) Builder
+	RSocketSelector(selector RSocketSelector) Builder
 	Build() (BrokerClient, error)
 }
 
@@ -51,6 +52,12 @@ type brokerClientConfig struct {
 	ip           net.IP
 	flags        uint32
 	uuid         uuid.UUID
+	selector     RSocketSelector
+}
+
+func (b *brokerClientConfig) RSocketSelector(selector RSocketSelector) Builder {
+	b.selector = selector
+	return b
 }
 
 func (b *brokerClientConfig) Public(p bool) Builder {
@@ -107,18 +114,23 @@ func (b *brokerClientConfig) Destination(destination string) Builder {
 }
 
 func (b *brokerClientConfig) Build() (client BrokerClient, e error) {
+	b.rh = rrpc.NewRequestHandler()
 	var selector RSocketSelector
 
 	b.uuid = uuid.New()
 
-	if b.ds != nil {
-		selector = &simpleRSocketSelector{config: *b}
-	} else if len(b.uri) > 0 {
-		b.ds = discovery_strategy.New(b.uri)
-		selector = &simpleRSocketSelector{config: *b}
+	if b.selector == nil {
+		if b.ds != nil {
+			selector = &simpleRSocketSelector{config: *b}
+		} else if len(b.uri) > 0 {
+			b.ds = discovery_strategy.New(b.uri)
+			selector = &simpleRSocketSelector{config: *b}
+		} else {
+			e = errors.New("must include either uri or discovery service")
+			return
+		}
 	} else {
-		e = errors.New("must include either uri or discovery service")
-		return
+		selector = b.selector
 	}
 
 	if b.key < 1 {
@@ -174,11 +186,11 @@ type BrokerClient interface {
 
 	ShardServiceSocket(group string, shardKey []byte, tags tags.Tags) BrokerSocket
 
-	GroupNamedRSocket(group string, tags tags.Tags) BrokerSocket
+	GroupNamedRSocket(name string, group string, tags tags.Tags) BrokerSocket
 
-	BroadcastNamedRSocket(group string, tags tags.Tags) BrokerSocket
+	BroadcastNamedRSocket(name string, group string, tags tags.Tags) BrokerSocket
 
-	ShardNamedRSocket(group string, shardKey []byte, tags tags.Tags) BrokerSocket
+	ShardNamedRSocket(name string, group string, shardKey []byte, tags tags.Tags) BrokerSocket
 }
 
 type RSocketSelector interface {
@@ -230,7 +242,7 @@ func (b *brokerClient) AddService(rs rrpc.RrpcRSocket) error {
 }
 
 func (b *brokerClient) AddNamedSocket(name string, rs rsocket.RSocket) error {
-	wrapper := named_rsocket_wrapper.New(name, rs)
+	wrapper := named_rsocket_wrapper.NewServiceWrapper(name, rs)
 	return b.config.rh.Register(wrapper)
 }
 
@@ -288,14 +300,14 @@ func (b *brokerClient) ShardServiceSocket(group string, shardKey []byte, tags ta
 	return socket
 }
 
-func (b *brokerClient) GroupNamedRSocket(group string, tags tags.Tags) BrokerSocket {
-	return named_rsocket_wrapper.New(group, b.GroupServiceSocket(group, tags))
+func (b *brokerClient) GroupNamedRSocket(name string, group string, tags tags.Tags) BrokerSocket {
+	return named_rsocket_wrapper.NewClientWrapper(name, b.GroupServiceSocket(group, tags))
 }
 
-func (b *brokerClient) BroadcastNamedRSocket(group string, tags tags.Tags) BrokerSocket {
-	return named_rsocket_wrapper.New(group, b.BroadcastServiceSocket(group, tags))
+func (b *brokerClient) BroadcastNamedRSocket(name string, group string, tags tags.Tags) BrokerSocket {
+	return named_rsocket_wrapper.NewClientWrapper(name, b.BroadcastServiceSocket(group, tags))
 }
 
-func (b *brokerClient) ShardNamedRSocket(group string, shardKey []byte, tags tags.Tags) BrokerSocket {
-	return named_rsocket_wrapper.New(group, b.ShardServiceSocket(group, shardKey, tags))
+func (b *brokerClient) ShardNamedRSocket(name string, group string, shardKey []byte, tags tags.Tags) BrokerSocket {
+	return named_rsocket_wrapper.NewClientWrapper(name, b.ShardServiceSocket(group, shardKey, tags))
 }
