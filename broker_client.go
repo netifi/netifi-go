@@ -16,7 +16,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"sync"
 )
 
 type Builder interface {
@@ -126,10 +125,10 @@ func (b *brokerClientConfig) Build() (client BrokerClient, e error) {
 
 	if b.selector == nil {
 		if b.ds != nil {
-			selector = &simpleRSocketSelector{config: *b}
+			selector = &simpleRSocketSelector{config: b}
 		} else if len(b.uri) > 0 {
 			b.ds = discovery_strategy.New(b.uri)
-			selector = &simpleRSocketSelector{config: *b}
+			selector = &simpleRSocketSelector{config: b}
 		} else {
 			e = errors.New("must include either uri or discovery service")
 			return
@@ -203,17 +202,13 @@ type RSocketSelector interface {
 
 type simpleRSocketSelector struct {
 	RSocketSelector
-	sync.Mutex
-	config brokerClientConfig
-	rs     rsocket.RSocket
+	config *brokerClientConfig
+	rs     *rsocket.RSocket
 }
 
 func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
-	s.Lock()
-	defer s.Unlock()
-
 	if s.rs != nil {
-		return s.rs
+		return *s.rs
 	} else {
 		return reconnecting_rsocket.New(func() string {
 			nodes := <-s.config.ds.DiscoverNodes()
@@ -226,7 +221,8 @@ func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
 				s.config.key,
 				s.config.token,
 				s.config.uuid,
-				s.config.flags, s.config.tags)
+				s.config.flags,
+				s.config.tags)
 			if e != nil {
 				log.Panic(e)
 			}
