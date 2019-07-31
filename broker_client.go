@@ -50,7 +50,7 @@ type brokerClientConfig struct {
 	token    []byte
 	tags     tags.Tags
 	ip       net.IP
-	flags    uint32
+	flags    uint16
 	uuid     uuid.UUID
 	selector RSocketSelector
 }
