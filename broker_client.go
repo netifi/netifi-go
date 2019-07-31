@@ -39,21 +39,20 @@ func New() Builder {
 }
 
 type brokerClientConfig struct {
-	rh           rrpc.RequestHandlingRSocket
-	dest         string
-	ds           discovery_strategy.DiscoveryStrategy
-	group        string
-	host         string
-	port         int
-	uri          string
-	key          uint64
-	token        []byte
-	encodedToken string
-	tags         tags.Tags
-	ip           net.IP
-	flags        uint32
-	uuid         uuid.UUID
-	selector     RSocketSelector
+	rh       rrpc.RequestHandlingRSocket
+	dest     string
+	ds       discovery_strategy.DiscoveryStrategy
+	group    string
+	host     string
+	port     int
+	uri      string
+	key      uint64
+	token    []byte
+	tags     tags.Tags
+	ip       net.IP
+	flags    uint32
+	uuid     uuid.UUID
+	selector RSocketSelector
 }
 
 func (b *brokerClientConfig) RSocketSelector(selector RSocketSelector) Builder {
@@ -95,7 +94,12 @@ func (b *brokerClientConfig) AccessToken(accessToken []byte) Builder {
 }
 
 func (b *brokerClientConfig) AccessTokenBase64(accessToken string) Builder {
-	b.encodedToken = accessToken
+	bytes, err := base64.StdEncoding.DecodeString(accessToken)
+	if err != nil {
+		panic(errors.Errorf("error decoding base64 access token string: %s", err))
+	}
+	b.token = bytes
+
 	return b
 }
 
@@ -139,18 +143,9 @@ func (b *brokerClientConfig) Build() (client BrokerClient, e error) {
 		return
 	}
 
-	if len(b.encodedToken) < 1 {
-		if len(b.token) < 1 {
-			e = errors.New("must include access token")
-			return
-		}
-	} else {
-		var bytes []byte
-		bytes, e = base64.StdEncoding.DecodeString(b.encodedToken)
-		if e != nil {
-			return
-		}
-		b.token = bytes
+	if len(b.token) < 1 {
+		e = errors.New("must include access token")
+		return
 	}
 
 	if len(b.group) < 1 {
@@ -192,6 +187,14 @@ type BrokerClient interface {
 	BroadcastNamedRSocket(name string, group string, tags tags.Tags) BrokerSocket
 
 	ShardNamedRSocket(name string, group string, shardKey []byte, tags tags.Tags) BrokerSocket
+
+	Group() string
+
+	Tags() tags.Tags
+
+	Destination() string
+
+	ConnectionId() string
 }
 
 type RSocketSelector interface {
@@ -233,9 +236,31 @@ func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
 }
 
 type brokerClient struct {
-	BrokerClient
 	config   brokerClientConfig
 	selector RSocketSelector
+}
+
+func (b *brokerClient) Group() string {
+	return b.config.group
+}
+
+func (b *brokerClient) ConnectionId() string {
+	return b.config.uuid.String()
+}
+
+func (b *brokerClient) Tags() tags.Tags {
+	return b.config.tags
+}
+
+func (b *brokerClient) Destination() (v string) {
+	for _, t := range b.config.tags {
+		key := t.Key()
+		if key == "com.netifi.destination" {
+			v = t.Value()
+			return
+		}
+	}
+	return
 }
 
 func (b *brokerClient) AddService(rs rrpc.RrpcRSocket) error {

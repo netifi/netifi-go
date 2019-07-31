@@ -46,7 +46,11 @@ func TestShouldIncludeAccessToken(t *testing.T) {
 }
 
 func TestShouldIncludeGroup(t *testing.T) {
-	_, e := New().AccessKey(123).AccessToken([]byte("token")).Uri("tcp://localhost").Build()
+	_, e := New().
+		AccessKey(123).
+		AccessToken([]byte("kTBDVtfRBO4tHOnZzSyY5ym2kfY=")).
+		Uri("tcp://localhost").
+		Build()
 	if e == nil {
 		t.Fail()
 		return
@@ -58,7 +62,7 @@ func TestShouldIncludeGroup(t *testing.T) {
 func TestBuild(t *testing.T) {
 	_, e := New().
 		AccessKey(123).
-		AccessToken([]byte("token")).
+		AccessToken([]byte("kTBDVtfRBO4tHOnZzSyY5ym2kfY=")).
 		Uri("tcp://locahost").
 		Group("test").
 		Build()
