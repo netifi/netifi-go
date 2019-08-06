@@ -9,6 +9,8 @@ import (
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
 	"github.com/rsocket/rsocket-go/rx"
+	"github.com/rsocket/rsocket-go/rx/flux"
+	"github.com/rsocket/rsocket-go/rx/mono"
 	rrpc "github.com/rsocket/rsocket-rpc-go"
 	"github.com/stretchr/testify/assert"
 	"strings"
@@ -63,7 +65,7 @@ func TestBuild(t *testing.T) {
 	_, e := New().
 		AccessKey(123).
 		AccessToken([]byte("kTBDVtfRBO4tHOnZzSyY5ym2kfY=")).
-		Uri("tcp://locahost").
+		Uri("tcp://localhost:8001").
 		Group("test").
 		Build()
 	if e != nil {
@@ -83,14 +85,15 @@ func TestNamedSocket(t *testing.T) {
 	}
 
 	gs := client.GroupNamedRSocket("mySocket", "test", tags.Empty())
-	payloads, errors := gs.RequestResponse(payload.NewString("some data", "some metadata")).ToChannel(context.Background())
+	response := gs.RequestResponse(payload.NewString("some data", "some metadata"))
+	payloads, errors := mono.ToChannel(response, context.Background())
 
 	select {
 	case p, ok := <-payloads:
 		if ok {
-			fmt.Println(*p)
-			data := payload.Payload(*p).DataUTF8()
-			metadata, b := payload.Payload(*p).MetadataUTF8()
+			fmt.Println(p)
+			data := payload.Payload(p).DataUTF8()
+			metadata, b := payload.Payload(p).MetadataUTF8()
 			if b {
 				assert.Equal(t, "some metadata", metadata)
 			} else {
@@ -110,7 +113,6 @@ func TestNamedSocket(t *testing.T) {
 type testRSocket struct {
 }
 
-
 func (testRSocket) FireAndForget(msg payload.Payload) {
 	panic("implement me")
 }
@@ -119,15 +121,15 @@ func (testRSocket) MetadataPush(msg payload.Payload) {
 	panic("implement me")
 }
 
-func (testRSocket) RequestResponse(msg payload.Payload) rx.Mono {
-	return rx.JustMono(msg)
+func (testRSocket) RequestResponse(msg payload.Payload) mono.Mono {
+	return mono.Just(msg)
 }
 
-func (testRSocket) RequestStream(msg payload.Payload) rx.Flux {
+func (testRSocket) RequestStream(msg payload.Payload) flux.Flux {
 	panic("implement me")
 }
 
-func (testRSocket) RequestChannel(msgs rx.Publisher) rx.Flux {
+func (testRSocket) RequestChannel(msgs rx.Publisher) flux.Flux {
 	panic("implement me")
 }
 

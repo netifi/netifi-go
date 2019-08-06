@@ -165,6 +165,9 @@ func (b *brokerClientConfig) Build() (client BrokerClient, e error) {
 		selector: selector,
 		config:   *b,
 	}
+
+	selector.selectRSocket()
+
 	return
 }
 
@@ -207,10 +210,9 @@ type simpleRSocketSelector struct {
 }
 
 func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
-	if s.rs != nil {
-		return *s.rs
-	} else {
-		return reconnecting_rsocket.New(func() string {
+	if s.rs == nil {
+		log.Printf("selecting new rsocket")
+		rs := reconnecting_rsocket.New(func() string {
 			nodes := <-s.config.ds.DiscoverNodes()
 			l := len(nodes)
 			i := rand.Intn(l)
@@ -224,11 +226,13 @@ func (s *simpleRSocketSelector) selectRSocket() rsocket.RSocket {
 				s.config.flags,
 				s.config.tags)
 			if e != nil {
-				log.Panic(e)
+				log.Panic("error creating payload: ", e)
 			}
 			return payload.New(nil, d)
 		})
+		s.rs = &rs
 	}
+	return *s.rs
 }
 
 type brokerClient struct {

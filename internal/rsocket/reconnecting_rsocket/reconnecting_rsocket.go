@@ -2,10 +2,13 @@ package reconnecting_rsocket
 
 import (
 	"context"
+	"github.com/jjeffcaii/reactor-go/scheduler"
 	"github.com/netifi/netifi-go/internal/rsocket/unwrapping_rsocket"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
 	"github.com/rsocket/rsocket-go/rx"
+	"github.com/rsocket/rsocket-go/rx/flux"
+	"github.com/rsocket/rsocket-go/rx/mono"
 	rrpc "github.com/rsocket/rsocket-rpc-go"
 	"log"
 	"sync"
@@ -13,28 +16,31 @@ import (
 )
 
 type ReconnectingRSocket struct {
-	rsocket.RSocket
-	mutex          sync.Mutex
+	sync.Mutex
 	requestHandler rrpc.RequestHandlingRSocket
-	activeSocket   rsocket.CloseableRSocket
+	activeSocket   *rsocket.CloseableRSocket
 	uri            func() string
 	factory        func() payload.Payload
 }
 
 func New(uri func() string, requestHandler rrpc.RequestHandlingRSocket, factory func() payload.Payload) rsocket.RSocket {
-	return &ReconnectingRSocket{
+	rs := &ReconnectingRSocket{
 		uri:            uri,
 		requestHandler: requestHandler,
-		mutex:          sync.Mutex{},
 		activeSocket:   nil,
 		factory:        factory,
 	}
+
+	rs.GetRSocket()
+
+	return rs
 }
 
 func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.Lock()
+	defer r.Unlock()
 	if r.activeSocket == nil {
+		log.Println("no active rsocket attempting to connect to ", r.uri())
 		rs, e = rsocket.
 			Connect().
 			MetadataMimeType("application/octet-stream").
@@ -42,6 +48,7 @@ func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e e
 			SetupPayload(r.factory()).
 			Acceptor(
 				func(socket rsocket.RSocket) rsocket.RSocket {
+					log.Println("successfully connected to ", r.uri())
 					return unwrapping_rsocket.New(r.requestHandler)
 				}).
 			Transport(r.uri()).
@@ -54,7 +61,9 @@ func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e e
 
 		rs.OnClose(r.Reset)
 
-		r.activeSocket = rs
+		r.activeSocket = &rs
+	} else {
+		rs = *r.activeSocket
 	}
 
 	return
@@ -62,7 +71,7 @@ func (r *ReconnectingRSocket) ConnectRSocket() (rs rsocket.CloseableRSocket, e e
 
 func (r *ReconnectingRSocket) GetViaChannel(ctx context.Context) (rs <-chan rsocket.CloseableRSocket) {
 	out := make(chan rsocket.CloseableRSocket)
-	rx.ElasticScheduler().Do(ctx, func(ctx context.Context) {
+	scheduler.Parallel().Worker().Do(func() {
 		defer close(out)
 
 		for {
@@ -89,8 +98,9 @@ func (r *ReconnectingRSocket) GetRSocket() rsocket.CloseableRSocket {
 }
 
 func (r *ReconnectingRSocket) Reset() {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.Lock()
+	defer r.Unlock()
+	log.Printf("connection reset to uri %s", r.uri())
 	r.activeSocket = nil
 }
 
@@ -102,14 +112,14 @@ func (r *ReconnectingRSocket) MetadataPush(msg payload.Payload) {
 	r.GetRSocket().MetadataPush(msg)
 }
 
-func (r *ReconnectingRSocket) RequestResponse(msg payload.Payload) rx.Mono {
+func (r *ReconnectingRSocket) RequestResponse(msg payload.Payload) mono.Mono {
 	return r.GetRSocket().RequestResponse(msg)
 }
 
-func (r *ReconnectingRSocket) RequestStream(msg payload.Payload) rx.Flux {
+func (r *ReconnectingRSocket) RequestStream(msg payload.Payload) flux.Flux {
 	return r.GetRSocket().RequestStream(msg)
 }
 
-func (r *ReconnectingRSocket) RequestChannel(msgs rx.Publisher) rx.Flux {
+func (r *ReconnectingRSocket) RequestChannel(msgs rx.Publisher) flux.Flux {
 	return r.GetRSocket().RequestChannel(msgs)
 }

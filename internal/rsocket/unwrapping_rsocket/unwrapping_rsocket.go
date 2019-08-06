@@ -2,7 +2,6 @@ package unwrapping_rsocket
 
 import (
 	"errors"
-	"fmt"
 	"github.com/netifi/netifi-go/internal/framing"
 	"github.com/netifi/netifi-go/internal/rsocket/transforming_rsocket"
 	"github.com/rsocket/rsocket-go"
@@ -14,16 +13,12 @@ type UnwrappedRSocket struct {
 }
 
 func (u *UnwrappedRSocket) unwrap(msg payload.Payload) (p payload.Payload, e error) {
-	fmt.Print("before -> ")
-	fmt.Println(msg)
 	d := msg.Data()
 	m, _ := msg.Metadata()
 	header := framing.FrameHeader(m)
 	frameType := header.FrameType()
 	metadata, e := unwrapMetadata(frameType, m)
 	p = payload.New(d, metadata)
-	fmt.Print("after  -> ")
-	fmt.Println(p)
 	return
 }
 

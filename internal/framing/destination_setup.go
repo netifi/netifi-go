@@ -248,6 +248,5 @@ func EncodeDestinationSetup(ipAddr net.IP,
 	}
 
 	d = w.Bytes()
-	fmt.Println(len(d))
 	return
 }
