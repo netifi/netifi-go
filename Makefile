@@ -1,7 +1,7 @@
 all:	install
 
 install:
-	go install -i ./protoc-gen-go
+	go install
 
 test:
 	go test -v ./...
