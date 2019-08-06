@@ -8,7 +8,7 @@ require (
 	github.com/hoisie/mustache v0.0.0-20120318181656-6dfe7cd5e765
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.8.1
-	github.com/rsocket/rsocket-go v0.0.0-00010101000000-000000000000
+	github.com/rsocket/rsocket-go v0.3.2
 	github.com/rsocket/rsocket-rpc-go v0.0.1
 	github.com/stretchr/testify v1.3.0
 )
