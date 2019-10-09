@@ -97,10 +97,10 @@ func (r *ReconnectingRSocket) GetRSocket() rsocket.CloseableRSocket {
 	return rs
 }
 
-func (r *ReconnectingRSocket) Reset() {
+func (r *ReconnectingRSocket) Reset(err error) {
 	r.Lock()
 	defer r.Unlock()
-	log.Printf("connection reset to uri %s", r.uri())
+	log.Printf("connection reset to uri %s due to error %s", r.uri(), err.Error())
 	r.activeSocket = nil
 }
 
